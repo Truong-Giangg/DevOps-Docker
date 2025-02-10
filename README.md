@@ -40,3 +40,24 @@ docker run --name shoeshop -dp 8888:8080 shoeshop:v1
 Show log docker app:
 ```bash
 docker logs -f shoeshop
+```
+# Docker build and run personal project with specific user todolist
+Dockerfile content
+```bash
+##BUILD STAGE##
+FROM node:16.3.0-alpine AS builder
+WORKDIR /app
+COPY . .
+RUN npm install
+RUN npm run build
+##RUN STAGE##
+FROM nginx:alpine
+WORKDIR /run
+RUN addgroup -S todolist && adduser -S todolist -G todolist
+COPY --from=builder /app/dist/ /usr/share/nginx/html
+RUN chown -R todolist:todolist /var/cache/nginx /var/run /var/log/nginx /usr/share/nginx/html /etc/nginx
+RUN sed -i 's|/var/run/nginx.pid|/tmp/nginx.pid|g' /etc/nginx/nginx.conf
+USER todolist
+EXPOSE 80
+CMD ["nginx", "-g","daemon off;"]
+```
